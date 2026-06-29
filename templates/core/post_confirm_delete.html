@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Delete Post{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="confirm-card card">
+    <div class="card-body">
+      <h1 class="auth-title">Delete Post</h1>
+      <p class="auth-subtitle">This action cannot be undone. The post and all its comments will be permanently removed.</p>
+
+      {% if post.text %}
+        <div class="card" style="margin: 16px 0; border-color: #f5c6c6; background: #fdf2f2;">
+          <div class="card-body" style="padding: 12px 16px;">
+            <p style="font-size:0.875rem; color: var(--text-sub); font-style:italic; margin:0;">
+              "{{ post.text|truncatechars:200 }}"
+            </p>
+          </div>
+        </div>
+      {% endif %}
+
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <form method="post" id="delete-post-form">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger" id="confirm-delete-btn">Delete Post</button>
+        </form>
+        <a href="{% url 'post_detail' post.pk %}" class="btn btn-ghost" id="cancel-delete-btn">Cancel</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

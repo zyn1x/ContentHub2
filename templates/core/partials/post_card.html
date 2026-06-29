@@ -1,0 +1,83 @@
+{% load core_extras %}
+
+<article class="card post-card" id="post-{{ post.pk }}">
+  <div class="card-body">
+
+    <!-- Header -->
+    <div class="post-header">
+      <div class="post-avatar">{{ post.author.username|slice:":1"|upper }}</div>
+      <div class="post-meta">
+        <span class="post-author">{{ post.author.username }}</span>
+        <time class="post-time" datetime="{{ post.created_at|date:'c' }}">
+          {{ post.created_at|timesince }} ago
+        </time>
+      </div>
+      {% if user.is_authenticated and user == post.author %}
+        <div class="post-options">
+          <a href="{% url 'post_edit' post.pk %}" class="btn btn-ghost btn-sm" id="edit-post-{{ post.pk }}">Edit</a>
+          <a href="{% url 'post_delete' post.pk %}" class="btn btn-danger btn-sm" id="delete-post-{{ post.pk }}">Delete</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Text -->
+    {% if post.text %}
+      <p class="post-text">{{ post.text|render_hashtags }}</p>
+    {% endif %}
+
+    <!-- Media -->
+    {% if post.image %}
+      <div class="post-media">
+        <a href="{% url 'post_detail' post.pk %}">
+          <img src="{{ post.image.url }}" alt="Image by {{ post.author.username }}" loading="lazy" />
+        </a>
+      </div>
+    {% endif %}
+    {% if post.video %}
+      <div class="post-media">
+        <video controls preload="metadata">
+          <source src="{{ post.video.url }}" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    {% endif %}
+
+    <!-- Hashtag chips -->
+    {% if post.hashtags.all %}
+      <div class="post-tags">
+        {% for tag in post.hashtags.all %}
+          <a href="{% url 'hashtag_feed' tag.name %}" class="hashtag-link">#{{ tag.name }}</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="post-actions">
+      {% if user.is_authenticated %}
+        <button
+          class="like-btn {% if post.pk in liked_ids %}liked{% endif %}"
+          id="like-btn-{{ post.pk }}"
+          data-post-id="{{ post.pk }}"
+          aria-label="Like"
+          aria-pressed="{% if post.pk in liked_ids %}true{% else %}false{% endif %}"
+        >
+          <span class="like-count" id="like-count-{{ post.pk }}">{{ post.like_count }}</span>
+          <span>{% if post.pk in liked_ids %}Liked{% else %}Like{% endif %}</span>
+        </button>
+      {% else %}
+        <a href="{% url 'login' %}?next={% url 'post_detail' post.pk %}" class="like-btn" id="like-prompt-{{ post.pk }}">
+          <span class="like-count">{{ post.like_count }}</span> Like
+        </a>
+      {% endif %}
+
+      <a href="{% url 'post_detail' post.pk %}#comments" class="comment-btn" id="comments-link-{{ post.pk }}">
+        {{ post.comment_count }} Comment{{ post.comment_count|pluralize }}
+      </a>
+
+      <a href="{% url 'post_detail' post.pk %}" class="btn btn-ghost btn-sm" id="view-post-{{ post.pk }}" style="margin-left:auto;">
+        View
+      </a>
+    </div>
+
+  </div>
+</article>

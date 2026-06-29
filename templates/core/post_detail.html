@@ -1,0 +1,155 @@
+{% extends 'core/base.html' %}
+{% load core_extras %}
+
+{% block title %}Post by {{ post.author.username }}{% endblock %}
+{% block meta_description %}{{ post.text|truncatechars:155 }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="mb-4">
+    <a href="{% url 'feed' %}" class="btn btn-ghost btn-sm" id="back-to-feed">Back to Feed</a>
+  </div>
+
+  <article class="card post-card" id="post-detail-{{ post.pk }}">
+    <div class="card-body">
+
+      <div class="post-header">
+        <div class="post-avatar">{{ post.author.username|slice:":1"|upper }}</div>
+        <div class="post-meta">
+          <span class="post-author">{{ post.author.username }}</span>
+          <time class="post-time" datetime="{{ post.created_at|date:'c' }}">
+            {{ post.created_at|date:"F j, Y, g:i A" }}
+          </time>
+          {% if post.updated_at != post.created_at %}
+            <span class="text-muted" style="font-size:0.76rem;"> (edited)</span>
+          {% endif %}
+        </div>
+        {% if user.is_authenticated and user == post.author %}
+          <div class="post-options">
+            <a href="{% url 'post_edit' post.pk %}" class="btn btn-ghost btn-sm" id="detail-edit-btn">Edit</a>
+            <a href="{% url 'post_delete' post.pk %}" class="btn btn-danger btn-sm" id="detail-delete-btn">Delete</a>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if post.text %}
+        <p class="post-text">{{ post.text|render_hashtags }}</p>
+      {% endif %}
+
+      {% if post.image %}
+        <div class="post-media">
+          <img src="{{ post.image.url }}" alt="Post image by {{ post.author.username }}" />
+        </div>
+      {% endif %}
+      {% if post.video %}
+        <div class="post-media">
+          <video controls preload="metadata" style="width:100%;">
+            <source src="{{ post.video.url }}" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      {% endif %}
+
+      {% if post.hashtags.all %}
+        <div class="post-tags">
+          {% for tag in post.hashtags.all %}
+            <a href="{% url 'hashtag_feed' tag.name %}" class="hashtag-link">#{{ tag.name }}</a>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="post-actions">
+        {% if user.is_authenticated %}
+          <button
+            class="like-btn {% if user_liked %}liked{% endif %}"
+            id="like-btn-detail"
+            data-post-id="{{ post.pk }}"
+            aria-pressed="{{ user_liked|yesno:'true,false' }}"
+          >
+            <span class="like-count" id="like-count-detail">{{ post.like_count }}</span>
+            <span>{% if user_liked %}Liked{% else %}Like{% endif %}</span>
+          </button>
+        {% else %}
+          <a href="{% url 'login' %}?next={{ request.path }}" class="like-btn">
+            {{ post.like_count }} Like{{ post.like_count|pluralize }}
+          </a>
+        {% endif %}
+        <span class="comment-btn" style="pointer-events:none;">{{ post.comment_count }} Comment{{ post.comment_count|pluralize }}</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- Comments section -->
+  <section class="card mt-4" id="comments">
+    <div class="card-body">
+      <h2 class="section-title" style="font-size:1rem;margin-bottom:16px;">
+        Comments ({{ post.comment_count }})
+      </h2>
+
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'comment_create' post.pk %}" id="comment-form">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="id_comment_text" class="form-label">Add a comment</label>
+            {{ comment_form.text }}
+            {% if comment_form.text.errors %}
+              <ul class="errorlist">{% for e in comment_form.text.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% endif %}
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm" id="submit-comment-btn">Post Comment</button>
+        </form>
+
+        {% if comments %}
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);" />
+        {% endif %}
+      {% else %}
+        <p class="text-muted" style="margin-bottom:16px;font-size:0.875rem;">
+          <a href="{% url 'login' %}?next={{ request.path }}">Login</a> to leave a comment.
+        </p>
+      {% endif %}
+
+      {% if comments %}
+        <div class="comment-list" id="comment-list">
+          {% for comment in comments %}
+            {% include 'core/partials/comment.html' %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state" style="padding:24px 0;" id="no-comments">
+          <p class="empty-desc">No comments yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const likeBtn = document.getElementById('like-btn-detail');
+  if (likeBtn) {
+    likeBtn.addEventListener('click', async () => {
+      const postId = likeBtn.dataset.postId;
+      const resp = await fetch(`/post/${postId}/like/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+      });
+      const data = await resp.json();
+      const count = document.getElementById('like-count-detail');
+      const label = likeBtn.querySelector('span:last-child');
+      if (data.liked) {
+        likeBtn.classList.add('liked');
+        likeBtn.setAttribute('aria-pressed', 'true');
+        if (label) label.textContent = 'Liked';
+      } else {
+        likeBtn.classList.remove('liked');
+        likeBtn.setAttribute('aria-pressed', 'false');
+        if (label) label.textContent = 'Like';
+      }
+      count.textContent = data.count;
+    });
+  }
+</script>
+{% endblock %}

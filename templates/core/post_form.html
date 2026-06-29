@@ -1,0 +1,100 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ action }} Post{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="mb-4">
+    <a href="{% if post %}{% url 'post_detail' post.pk %}{% else %}{% url 'feed' %}{% endif %}" class="btn btn-ghost btn-sm" id="back-link">Back</a>
+  </div>
+
+  <div class="form-card">
+    <div class="card">
+      <div class="card-body">
+        <div class="page-header">
+          <h1 class="page-title">{% if action == 'Create' %}New Post{% else %}Edit Post{% endif %}</h1>
+          <p class="section-subtitle">
+            {% if action == 'Create' %}Use #hashtags in your text to categorize your post.{% else %}Update your post below.{% endif %}
+          </p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" id="post-form" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-error" id="form-errors">
+              {% for error in form.non_field_errors %}{{ error }}<br />{% endfor %}
+            </div>
+          {% endif %}
+
+          <!-- Text -->
+          <div class="form-group">
+            <label for="id_post_text" class="form-label">Post text</label>
+            <textarea
+              name="text"
+              id="id_post_text"
+              class="form-control"
+              rows="5"
+              placeholder="What's on your mind?"
+              maxlength="2000"
+              data-max-chars="2000"
+              data-counter-id="text-char-counter"
+            >{{ form.text.value|default:'' }}</textarea>
+            {% if form.text.errors %}
+              <ul class="errorlist">{% for e in form.text.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% endif %}
+            <div class="char-counter" id="text-char-counter">0 / 2000</div>
+          </div>
+
+          <!-- Image -->
+          <div class="form-group">
+            <label class="form-label">Image <span class="text-muted">(jpg, jpeg, png, gif &mdash; max 10 MB)</span></label>
+            <div class="file-upload-area" id="image-upload-area">
+              <input type="file" name="image" id="id_image" accept=".jpg,.jpeg,.png,.gif" />
+              <div class="file-upload-label">
+                <strong>Click to upload</strong> or drag and drop<br />
+                <span style="font-size:0.8rem;">JPG, JPEG, PNG, GIF up to 10 MB</span>
+              </div>
+              <div class="file-preview" id="image-preview"></div>
+            </div>
+            {% if form.image.errors %}
+              <ul class="errorlist">{% for e in form.image.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% endif %}
+            {% if post and post.image %}
+              <p class="form-helptext">Current image on file. Upload a new one to replace it.</p>
+            {% endif %}
+          </div>
+
+          <!-- Video -->
+          <div class="form-group">
+            <label class="form-label">Video <span class="text-muted">(mp4, webm &mdash; max 10 MB)</span></label>
+            <div class="file-upload-area" id="video-upload-area">
+              <input type="file" name="video" id="id_video" accept=".mp4,.webm" />
+              <div class="file-upload-label">
+                <strong>Click to upload</strong> or drag and drop<br />
+                <span style="font-size:0.8rem;">MP4, WebM up to 10 MB</span>
+              </div>
+              <div class="file-preview" id="video-preview"></div>
+            </div>
+            {% if form.video.errors %}
+              <ul class="errorlist">{% for e in form.video.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% endif %}
+            {% if post and post.video %}
+              <p class="form-helptext">Current video on file. Upload a new one to replace it.</p>
+            {% endif %}
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:20px;">
+            <button type="submit" class="btn btn-primary" id="submit-post-btn">
+              {% if action == 'Create' %}Publish Post{% else %}Save Changes{% endif %}
+            </button>
+            <a href="{% if post %}{% url 'post_detail' post.pk %}{% else %}{% url 'feed' %}{% endif %}" class="btn btn-ghost" id="cancel-post-btn">Cancel</a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

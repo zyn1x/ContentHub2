@@ -1,0 +1,18 @@
+<div class="comment-item" id="comment-{{ comment.pk }}">
+  <div class="comment-avatar">{{ comment.author.username|slice:":1"|upper }}</div>
+  <div class="comment-body">
+    <div>
+      <span class="comment-author">{{ comment.author.username }}</span>
+      <time class="comment-time" datetime="{{ comment.created_at|date:'c' }}">
+        {{ comment.created_at|timesince }} ago
+      </time>
+      {% if user.is_authenticated and user == comment.author %}
+        <form method="post" action="{% url 'comment_delete' comment.pk %}" style="display:inline;margin-left:6px;" onsubmit="return confirm('Delete this comment?');">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-sm" id="delete-comment-{{ comment.pk }}">Delete</button>
+        </form>
+      {% endif %}
+    </div>
+    <p class="comment-text">{{ comment.text }}</p>
+  </div>
+</div>

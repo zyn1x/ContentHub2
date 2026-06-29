@@ -1,0 +1,133 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="{% block meta_description %}ContentHub — Share posts, ideas, and media.{% endblock %}" />
+  <title>{% block title %}ContentHub{% endblock %} — ContentHub</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="navbar-inner">
+      <a href="{% url 'feed' %}" class="navbar-brand">ContentHub</a>
+
+      <div class="navbar-search">
+        <form method="get" action="{% url 'search' %}" role="search">
+          <input
+            type="search"
+            name="q"
+            id="global-search"
+            placeholder="Search "
+            value="{{ request.GET.q|default:'' }}"
+            aria-label="Search ContentHub"
+            autocomplete="off"
+          />
+        </form>
+      </div>
+
+      <div class="navbar-actions">
+        {% if user.is_authenticated %}
+          <a href="{% url 'post_create' %}" class="btn btn-primary btn-sm" id="nav-create-post">New Post</a>
+          <div class="navbar-user">
+            <div class="user-avatar" title="{{ user.username }}">{{ user.username|slice:":1"|upper }}</div>
+            <span class="navbar-username">{{ user.username }}</span>
+            <form method="post" action="{% url 'logout' %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-ghost btn-sm" id="nav-logout">Logout</button>
+            </form>
+          </div>
+        {% else %}
+          <a href="{% url 'login' %}" class="btn btn-ghost btn-sm" id="nav-login">Login</a>
+          <a href="{% url 'register' %}" class="btn btn-primary btn-sm" id="nav-register">Register</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  {% if messages %}
+    <div class="alert-container" role="alert" aria-live="polite">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Main Content -->
+  <main id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <p>Built by <strong>Dikshant Sharma</strong> &nbsp;&middot;&nbsp;</p>
+  </footer>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container" aria-live="assertive"></div>
+
+  <!-- Global JS -->
+  <script>
+    // Auto-dismiss alerts
+    document.querySelectorAll('.alert').forEach(el => {
+      setTimeout(() => {
+        el.style.transition = 'opacity 0.3s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+      }, 5000);
+    });
+
+    // Toast helper
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.3s';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Drag-over effect for file inputs
+    document.querySelectorAll('.file-upload-area').forEach(area => {
+      const input = area.querySelector('input[type="file"]');
+      area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('drag-over'); });
+      area.addEventListener('dragleave', () => area.classList.remove('drag-over'));
+      area.addEventListener('drop', e => { e.preventDefault(); area.classList.remove('drag-over'); });
+      if (input) {
+        input.addEventListener('change', () => {
+          const preview = area.querySelector('.file-preview');
+          if (preview && input.files.length > 0) {
+            preview.textContent = input.files[0].name;
+            preview.style.display = 'block';
+          }
+        });
+      }
+    });
+
+    // Character counter
+    document.querySelectorAll('[data-max-chars]').forEach(el => {
+      const max = parseInt(el.dataset.maxChars);
+      const counter = document.getElementById(el.dataset.counterId);
+      if (!counter) return;
+      function update() {
+        counter.textContent = `${el.value.length} / ${max}`;
+        counter.className = 'char-counter';
+        if (el.value.length > max * 0.85) counter.classList.add('near-limit');
+        if (el.value.length >= max) counter.classList.add('at-limit');
+      }
+      el.addEventListener('input', update);
+      update();
+    });
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
